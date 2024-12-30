@@ -12,6 +12,27 @@ function interpolate(
   target: { x: number; y: number; z: number }[],
   progress: number
 ) {
+  const numPoints = target.length;
+  const additionalPoints = numPoints - source.length;
+  if (additionalPoints > 0) {
+    source = source.concat(
+      new Array(additionalPoints).fill(target[target.length - 2])
+    );
+  }
+  const coords = [];
+  for (let i = 0; i < numPoints; ++i) {
+    const sourceX = source[i].x;
+    const sourceY = source[i].y;
+    const sourceZ = source[i].z;
+    const { x, y, z } = target[i];
+    const coord = {
+      x: (1 - progress) * sourceX + progress * x,
+      y: (1 - progress) * sourceY + progress * y,
+      z: (1 - progress) * sourceZ + progress * z,
+    };
+    coords.push(coord);
+  }
+  return coords;
   return target.map((targetPoint, i) => {
     const sourceX = source[i]?.x || source[source.length - 1]?.x || 0;
     const sourceY = source[i]?.y || source[source.length - 1]?.y || 0;
@@ -42,6 +63,23 @@ function updateInstancedMeshMatrices(
     mesh.setMatrixAt(i, scratchObject3D.matrix);
   }
   mesh.instanceMatrix.needsUpdate = true;
+}
+
+/** Print out any indexes that are different between the source and taget cloud */
+function printDifferences(
+  cloud1: { x: number; y: number; z: number }[],
+  cloud2: { x: number; y: number; z: number }[]
+) {
+  const numPoints = Math.max(cloud1.length, cloud2.length);
+  for (let i = 0; i < numPoints; ++i) {
+    const { x: x1, y: y1, z: z1 } = cloud1[i] || {};
+    const { x: x2, y: y2, z: z2 } = cloud2[i] || {};
+    if (x1 !== x2 || y1 !== y2 || z1 !== z2) {
+      console.log(
+        `Difference at index ${i}: { x: ${x1}, y: ${y1}, z: ${z1} } vs { x: ${x2}, y: ${y2}, z: ${z2} }`
+      );
+    }
+  }
 }
 
 export function usePointCloud<T extends PointCloudType>(

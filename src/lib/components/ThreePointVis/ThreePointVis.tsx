@@ -1,7 +1,7 @@
 import { Canvas } from "@react-three/fiber";
 import { Lights } from "./Lights";
 import { Controls } from "./Controls";
-import { ComponentProps, useEffect, useState } from "react";
+import { ComponentProps, useState } from "react";
 import { PointCloud } from "../../PointCloud";
 
 // const data = new Array(10000)
@@ -12,7 +12,7 @@ import { PointCloud } from "../../PointCloud";
 export const ThreePointVis = () => {
   const [shape, setShape] =
     useState<ComponentProps<typeof PointCloud>["shape"]>("grid");
-  const [points, setPoints] = useState<number>(100);
+  const [points, setPoints] = useState<number>(100 * 100);
 
   const setCube = () => {
     setShape("cube");
@@ -32,6 +32,8 @@ export const ThreePointVis = () => {
       <Canvas camera={{ position: [0, 0, 100] }}>
         <Controls />
         <Lights />
+        {/** react-three-fibre axis helper */}
+        {/* <axesHelper args={[100]} /> */}
         <PointCloud points={points} shape={shape}>
           <cylinderGeometry attach="geometry" args={[0.5, 0.5, 0.15, 32]} />
           <meshStandardMaterial attach="material" color="hotpink" />

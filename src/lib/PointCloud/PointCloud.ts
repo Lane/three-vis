@@ -63,6 +63,61 @@ export class PointCloud {
     });
   }
 
+  createSpiralGrid(options: GridPointCloudOptions = {}) {
+    const spacing = options.spacing || 1.5;
+    function generateDirections(n: number): Array<"r" | "d" | "l" | "u"> {
+      const dir = ["r", "d", "l", "u"] as const;
+      const result = [];
+      let step = 1;
+      let index = 0;
+      while (result.length < n) {
+        for (let i = 0; i < 2; i++) {
+          for (let j = 0; j < step; j++) {
+            if (result.length < n) {
+              result.push(dir[index % dir.length]);
+            }
+          }
+          index++;
+        }
+        step++;
+      }
+      return result as Array<"r" | "d" | "l" | "u">;
+    }
+    function getNextPoint(
+      currentPoint: [number, number],
+      direction: "r" | "d" | "l" | "u"
+    ): [number, number] {
+      const [x, y] = currentPoint;
+      if (direction === "r") return [x + 1, y];
+      if (direction === "d") return [x, y + 1];
+      if (direction === "l") return [x - 1, y];
+      if (direction === "u") return [x, y - 1];
+      return [x, y];
+    }
+    const directions = generateDirections(this.points);
+    const totalEntries = this.points;
+    const columnCount = Math.round(Math.sqrt(totalEntries));
+    const rowCount = Math.ceil(totalEntries / columnCount);
+    const midpoint: [number, number] = [
+      Math.floor(columnCount / 2),
+      Math.floor(rowCount / 2),
+    ];
+    let prevPoint = midpoint;
+    const drawOrder = directions.map((dir, i) => {
+      const prevDir = directions[i - 1];
+      const point = i === 0 ? midpoint : getNextPoint(prevPoint, prevDir);
+      prevPoint = point;
+      return point;
+    });
+    return drawOrder.map(([x, y]) => {
+      return {
+        x: (x - columnCount / 2) * spacing,
+        y: (y - rowCount / 2) * spacing,
+        z: 0,
+      };
+    });
+  }
+
   createGrid(options: GridPointCloudOptions = {}) {
     const totalEntries = this.points;
     const spacing = options.spacing || 1.05;
@@ -70,8 +125,8 @@ export class PointCloud {
     const columnCount = Math.round(Math.sqrt(totalEntries * aspectRatio));
     const rowCount = Math.ceil(totalEntries / columnCount);
     return this.pointsArray.map((_, index) => {
-      const col = (index % columnCount) + 1;
-      const row = Math.floor(index / columnCount) + 1;
+      const col = (index % columnCount) - columnCount / 2;
+      const row = Math.floor(index / columnCount) - rowCount / 2;
       return {
         x: col * spacing,
         y: row * spacing,
@@ -82,7 +137,7 @@ export class PointCloud {
 
   create<T extends PointCloudType>(kind: T, options: PointCloudOptions[T]) {
     if (kind === "grid")
-      return this.createGrid(options as GridPointCloudOptions);
+      return this.createSpiralGrid(options as GridPointCloudOptions);
     if (kind === "spiral")
       return this.createSpiral(options as SpiralPointCloudOptions);
     if (kind === "cube")
